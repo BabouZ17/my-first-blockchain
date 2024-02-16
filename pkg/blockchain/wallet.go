@@ -11,8 +11,9 @@ import (
 )
 
 type Wallet struct {
-	PrivateKey *rsa.PrivateKey
-	PublicKey  *rsa.PublicKey
+	PrivateKey   *rsa.PrivateKey
+	PublicKey    *rsa.PublicKey
+	Transactions []*Transaction
 }
 
 func NewWallet() (*Wallet, error) {
@@ -22,7 +23,11 @@ func NewWallet() (*Wallet, error) {
 		return nil, err
 	}
 
-	return &Wallet{PrivateKey: privateKey, PublicKey: publicKey}, err
+	return &Wallet{
+		PrivateKey:   privateKey,
+		PublicKey:    publicKey,
+		Transactions: []*Transaction{},
+	}, err
 }
 
 func GenerateRSAKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
@@ -31,6 +36,19 @@ func GenerateRSAKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
 		return nil, nil, err
 	}
 	return privateKey, &privateKey.PublicKey, nil
+}
+
+func (w *Wallet) AddTransaction(receiver *Wallet, amount float32) *Transaction {
+	// Create transaction
+	transaction := NewTransaction(w.PublicKey.N.String(), receiver.PublicKey.N.String(), amount, false)
+
+	// Add new transaction to receiver
+	receiver.Transactions = append(receiver.Transactions, transaction)
+
+	// Add new transaction to sender
+	w.Transactions = append(w.Transactions, transaction)
+
+	return w.Transactions[len(w.Transactions)-1]
 }
 
 func (w *Wallet) SignTransaction(ts *Transaction) (string, error) {
@@ -49,7 +67,6 @@ func (w *Wallet) SignTransaction(ts *Transaction) (string, error) {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(signedHash), nil
-
 }
 
 func VerifyTransaction(ts *Transaction, publicKey *rsa.PublicKey, signature string) error {
@@ -66,7 +83,7 @@ func VerifyTransaction(ts *Transaction, publicKey *rsa.PublicKey, signature stri
 	err = rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hashedData[:], signatureBytes)
 
 	if err != nil {
-		return errors.New("Transaction Signature not valid.")
+		return errors.New("the transaction signature not valid")
 	}
 	return nil
 }

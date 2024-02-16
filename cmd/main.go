@@ -23,12 +23,7 @@ func main() {
 	}
 
 	// Create a transaction from Sponge to Bob
-	transaction := blockchain.NewTransaction(
-		walletOfSponge.PublicKey.N.String(),
-		walletOfBob.PublicKey.N.String(),
-		10.0,
-		false,
-	)
+	transaction := walletOfSponge.AddTransaction(walletOfBob, 10.0)
 
 	// Sign the transaction
 	signedSignature, err := walletOfSponge.SignTransaction(transaction)
@@ -46,12 +41,12 @@ func main() {
 	blockChain.AddBlock("Sponge sent 10$ to Bob", "Sponge", []*blockchain.Transaction{transaction})
 
 	// Add new transaction
-	transactionBis := blockchain.NewTransaction(walletOfBob.PublicKey.N.String(), walletOfSponge.PublicKey.N.String(), 25.0, false)
+	transactionBis := walletOfBob.AddTransaction(walletOfSponge, 25.0)
 
 	// Sign the transaction
 	signedSignature, err = walletOfBob.SignTransaction(transactionBis)
 	if err != nil {
-		log.Fatal("Could not sign the transaction")
+		log.Fatal("Could not sign the transactionBis")
 	}
 
 	// Verify signature
@@ -82,5 +77,21 @@ func main() {
 			fmt.Printf("Coinbase: %t\n", ts.Coinbase)
 			fmt.Println()
 		}
+	}
+
+	fmt.Println("Transactions in wallet of Bob:")
+	for _, ts := range walletOfBob.Transactions {
+		fmt.Printf("Sender: %s\n", ts.Sender)
+		fmt.Printf("Receiver: %s\n", ts.Receiver)
+		fmt.Printf("Amount: %f\n", ts.Amount)
+		fmt.Println()
+	}
+
+	fmt.Println("Transactions in wallet of Sponge:")
+	for _, ts := range walletOfSponge.Transactions {
+		fmt.Printf("Sender: %s\n", ts.Sender)
+		fmt.Printf("Receiver: %s\n", ts.Receiver)
+		fmt.Printf("Amount: %f\n", ts.Amount)
+		fmt.Println()
 	}
 }
